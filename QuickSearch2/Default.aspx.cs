@@ -45,7 +45,15 @@ namespace QuickSearch2
                 }
             }                  
         }
-		protected void btnSearch_Click(object sender, EventArgs e)
+        protected void OnRowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                DateTime dt = DateTime.Now;
+                String formated = dt.ToString("dd.MM.yyyy");
+            }
+        }
+        protected void btnSearch_Click(object sender, EventArgs e)
         {
 			if (DropDownList1.SelectedIndex==0)
 			{
