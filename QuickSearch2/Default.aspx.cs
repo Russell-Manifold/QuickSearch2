@@ -39,9 +39,13 @@ namespace QuickSearch2
                     {
                         using (var client = new WebClient())
                         {
-                            client.DownloadFile("https://drive.google.com/uc?export=download&id=" + fileId, HttpContext.Current.Server.MapPath(fileId + ".csv"));
-                            LoadNewID(fileId);
-                            LoadCSVToDb(HttpContext.Current.Server.MapPath(fileId + ".csv"));
+                            try
+                            {
+                                client.DownloadFile("https://drive.google.com/uc?export=download&id=" + fileId, HttpContext.Current.Server.MapPath(fileId + ".csv"));
+                                LoadNewID(fileId);
+                                LoadCSVToDb(HttpContext.Current.Server.MapPath(fileId + ".csv"));
+                            }
+                            catch { }
                         }
                     }
                 }
@@ -198,7 +202,7 @@ namespace QuickSearch2
                 UserCredential credential;
                 using (var stream = new FileStream(HttpContext.Current.Server.MapPath("credentials.json"), FileMode.Open, FileAccess.Read))
                 {
-                    string credPath = "token.json";
+                    //string credPath = "token.json";
                     credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
                         GoogleClientSecrets.Load(stream).Secrets,
                         ReadWriteScope,
@@ -212,7 +216,9 @@ namespace QuickSearch2
                     HttpClientInitializer = credential,
                     ApplicationName = ApplicationName,
                 });
-                String spreadsheetId = "1-vLP8v9SViiunihTJWCYbcy0zcJAt0sjyl7pu5Fb3K4";
+            try
+            {
+                String spreadsheetId = QuickSearch2.Properties.Settings.Default.LogDataSpreadsheet;   
                 String range = "Sheet1!A1:E1";
                 ValueRange body = new ValueRange();
                 body.MajorDimension = "ROWS";
@@ -221,7 +227,11 @@ namespace QuickSearch2
 
                 var result = service.Spreadsheets.Values.Append(body, spreadsheetId, range);
                 result.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
-                result.Execute();          
+                result.Execute();
+            }
+            catch {
+                Response.Write("<script>alert('Unable to connect to specified Google Sheet Log Data')</script>");
+            }
         }
         private void GetFileId()
 		{
@@ -242,22 +252,30 @@ namespace QuickSearch2
                 HttpClientInitializer = credential,
                 ApplicationName = ApplicationName,
             });
-            //String spreadsheetId = "1LNUuQ3oHysNUpiIMpXyy6UXSC45zW9j7Hk0gF_AUSdk";
-            String spreadsheetId = "1-nJwaGKNHdKFI_6aKoe5M_5StReg1Kr89yBmWwAd0lk";
-            String range = "Sheet1!A1";
-            SpreadsheetsResource.ValuesResource.GetRequest request =
-                    service.Spreadsheets.Values.Get(spreadsheetId, range);
-            ValueRange response = request.Execute();
-            IList<IList<Object>> values = response.Values;
-            if (values != null && values.Count > 0)
+
+            try
             {
-                var mainID = values[0];
-                fileId = mainID[0].ToString();
-                //Response.Write("<script>alert('The id found was " + mainID[0] + "')</script>");
+                //String spreadsheetId = "1LNUuQ3oHysNUpiIMpXyy6UXSC45zW9j7Hk0gF_AUSdk";
+                //String spreadsheetId = "1-nJwaGKNHdKFI_6aKoe5M_5StReg1Kr89yBmWwAd0lk";
+                String spreadsheetId =  QuickSearch2.Properties.Settings.Default.DefaultSpreadsheetID;
+                String range = "Sheet1!A1";
+                SpreadsheetsResource.ValuesResource.GetRequest request =
+                        service.Spreadsheets.Values.Get(spreadsheetId, range);
+                ValueRange response = request.Execute();
+                IList<IList<Object>> values = response.Values;
+                if (values != null && values.Count > 0)
+                {
+                    var mainID = values[0];
+                    fileId = mainID[0].ToString();
+                    //Response.Write("<script>alert('The id found was " + mainID[0] + "')</script>");
+                }
+                else
+                {
+                    Response.Write("<script>alert('Could not find ID')</script>");
+                }
             }
-            else
-            {
-                Response.Write("<script>alert('Could not find ID')</script>");
+            catch {
+                Response.Write("<script>alert('Unable to connect to specified Google Sheet')</script>");
             }
         }
 		protected void btnClear_Click(object sender, EventArgs e)

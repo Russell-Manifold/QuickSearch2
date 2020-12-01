@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="QuickSearch2.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="DefaultSpreadsheetID" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">1-nJwaGKNHdKFI_6aKoe5M_5StReg1Kr89yBmWwAd0lk</Value>
+    </Setting>
+    <Setting Name="LogDataSpreadsheet" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">1-vLP8v9SViiunihTJWCYbcy0zcJAt0sjyl7pu5Fb3K4</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
