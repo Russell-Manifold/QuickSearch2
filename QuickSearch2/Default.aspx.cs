@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -20,13 +21,14 @@ namespace QuickSearch2
     public partial class Default : System.Web.UI.Page
     {
         static string[] Scopes = { SheetsService.Scope.SpreadsheetsReadonly };
+        static string[] ReadWriteScope = { SheetsService.Scope.Spreadsheets };
         static string ApplicationName = "Google Sheets API .NET Quickstart";
         private string fileId="";
         private SqlCommand cmd = new SqlCommand();
-        private SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=D:\Visual Studios\repo\QuickSearch2\QuickSearch2\App_Data\MainData.mdf;Integrated Security=True;Connect Timeout=30");
+        private SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename="+HttpContext.Current.Server.MapPath("App_Data\\MainData.mdf")+";Integrated Security=True;Connect Timeout=30");
         protected void Page_Load(object sender, EventArgs e)
         {
-			if (!IsPostBack)
+            if (!IsPostBack)
 			{
                 if (fileId == "")
                 {
@@ -37,21 +39,13 @@ namespace QuickSearch2
                     {
                         using (var client = new WebClient())
                         {
-                            client.DownloadFile("https://drive.google.com/uc?export=download&id=" + fileId, @"D:\Visual Studios\repo\QuickSearch2\QuickSearch2\" + fileId + ".csv");
+                            client.DownloadFile("https://drive.google.com/uc?export=download&id=" + fileId, HttpContext.Current.Server.MapPath(fileId + ".csv"));
                             LoadNewID(fileId);
-                            LoadCSVToDb(@"D:\Visual Studios\repo\QuickSearch2\QuickSearch2\" + fileId + ".csv");
+                            LoadCSVToDb(HttpContext.Current.Server.MapPath(fileId + ".csv"));
                         }
                     }
                 }
             }                  
-        }
-        protected void OnRowDataBound(object sender, GridViewRowEventArgs e)
-        {
-            if (e.Row.RowType == DataControlRowType.DataRow)
-            {
-                DateTime dt = DateTime.Now;
-                String formated = dt.ToString("dd.MM.yyyy");
-            }
         }
         protected void btnSearch_Click(object sender, EventArgs e)
         {
@@ -61,21 +55,54 @@ namespace QuickSearch2
             }
 			else
 			{
+                GridViewCustomer.DataSource = null;
+                GridViewCustomer.DataBind();
                 string Field = DropDownList1.SelectedValue.ToString();
                 string SearchVal = txfSearch.Text.ToString();
                 con.Open();
-                SqlDataAdapter adapter = new SqlDataAdapter($"SELECT * FROM tblCustomer WHERE {Field} LIKE '%{SearchVal}%'", con);
-                //SqlDataAdapter adapter = new SqlDataAdapter($"SELECT * FROM tblCustomer WHERE Name LIKE '%Ab%'", con);
+                SqlDataAdapter adapter;
+                if (Field == "TelHome")
+                {                   
+                      adapter = new SqlDataAdapter($"SELECT * FROM tblCustomer WHERE TelHome LIKE '%{SearchVal}%'  OR TelWork LIKE '%{SearchVal}%' OR TelOther LIKE '%{SearchVal}%'", con);
+				}
+				else
+				{
+                     adapter = new SqlDataAdapter($"SELECT * FROM tblCustomer WHERE [{Field}] LIKE '%{SearchVal}%'", con);
+                }
                 DataSet ds = new DataSet();
 				try
 				{
                     adapter.Fill(ds);
-                    GridViewCustomer.AutoGenerateColumns = true;
+                    GridViewCustomer.AutoGenerateColumns = true;                  
                     GridViewCustomer.DataSource = ds.Tables[0];
                     GridViewCustomer.DataBind();
+					foreach(GridViewRow dr in GridViewCustomer.Rows)
+					{
+						try
+						{
+                            DateTime dts1 = Convert.ToDateTime(dr.Cells[4].Text);
+                            dr.Cells[4].Text = dts1.ToString("dd MMM yyyy");
+                           
+						}
+						catch (Exception)
+						{
+						}
+						try
+						{
+                            DateTime dts2 = Convert.ToDateTime(dr.Cells[5].Text);
+                            dr.Cells[5].Text = dts2.ToString("dd MMM yyyy");
+                        }
+						catch (Exception)
+						{
+						}
+					}
                     con.Close();
+					if (ds.Tables[0].Rows.Count>0)
+					{
+                         SendLogData(ds.Tables[0].Rows.Count+"", Field, SearchVal, DateTime.Now.ToString("dd MMM yyyy hh:mm:ss"));
+                    }
                 }
-				catch (Exception)
+				catch (Exception ex)
 				{
 
 				}               
@@ -166,10 +193,40 @@ namespace QuickSearch2
             con.Close();
             return currentID;
         }
+        private void SendLogData(string Rows,string fieldName,string searchVal,string DateTime)
+		{
+                UserCredential credential;
+                using (var stream = new FileStream(HttpContext.Current.Server.MapPath("credentials.json"), FileMode.Open, FileAccess.Read))
+                {
+                    string credPath = "token.json";
+                    credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                        GoogleClientSecrets.Load(stream).Secrets,
+                        ReadWriteScope,
+                        "user",
+                        CancellationToken.None
+                        /*new FileDataStore(credPath)*/).Result;
+                }
+
+                var service = new SheetsService(new BaseClientService.Initializer()
+                {
+                    HttpClientInitializer = credential,
+                    ApplicationName = ApplicationName,
+                });
+                String spreadsheetId = "1-vLP8v9SViiunihTJWCYbcy0zcJAt0sjyl7pu5Fb3K4";
+                String range = "Sheet1!A1:E1";
+                ValueRange body = new ValueRange();
+                body.MajorDimension = "ROWS";
+                var list = new List<object>() { Rows, fieldName, searchVal, DateTime };
+                body.Values = new List<IList<object>> { list };
+
+                var result = service.Spreadsheets.Values.Append(body, spreadsheetId, range);
+                result.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
+                result.Execute();          
+        }
         private void GetFileId()
 		{
             UserCredential credential;
-            using (var stream = new FileStream(@"D:\Visual Studios\repo\QuickSearch2\QuickSearch2\credentials.json", FileMode.Open, FileAccess.Read))
+            using (var stream = new FileStream(HttpContext.Current.Server.MapPath("credentials.json"), FileMode.Open, FileAccess.Read))
             {
                 string credPath = "token.json";
                 credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
@@ -185,6 +242,7 @@ namespace QuickSearch2
                 HttpClientInitializer = credential,
                 ApplicationName = ApplicationName,
             });
+            //String spreadsheetId = "1LNUuQ3oHysNUpiIMpXyy6UXSC45zW9j7Hk0gF_AUSdk";
             String spreadsheetId = "1-nJwaGKNHdKFI_6aKoe5M_5StReg1Kr89yBmWwAd0lk";
             String range = "Sheet1!A1";
             SpreadsheetsResource.ValuesResource.GetRequest request =
@@ -195,7 +253,7 @@ namespace QuickSearch2
             {
                 var mainID = values[0];
                 fileId = mainID[0].ToString();
-                Response.Write("<script>alert('The id found was " + mainID[0] + "')</script>");
+                //Response.Write("<script>alert('The id found was " + mainID[0] + "')</script>");
             }
             else
             {
