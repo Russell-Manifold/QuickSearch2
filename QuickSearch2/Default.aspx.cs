@@ -65,13 +65,19 @@ namespace QuickSearch2
                 string SearchVal = txfSearch.Text.ToString();
                 con.Open();
                 SqlDataAdapter adapter;
+                string AllFields = "HomeAssistPanicSOS,MemberStatus,PolicyType,MemberNo,Policy_Inception_date,CancellationDate,Title,Name,Surname,IDNumber,PassportNumber,TelHome,TelWork,TelOther,MainEmailAddress,AltEmailAddress,ResidentialAddressComplexNo,ResidentialAddressComplexName,ResidentialAddressStreetNo,ResidentialAddressStreetName,ResidentialAddressSuburb,ResidentialAddressPOcode,ResidentialAddressProvince";
                 if (Field == "TelHome")
                 {                   
-                      adapter = new SqlDataAdapter($"SELECT * FROM tblCustomer WHERE TelHome LIKE '%{SearchVal}%'  OR TelWork LIKE '%{SearchVal}%' OR TelOther LIKE '%{SearchVal}%'", con);
+                      adapter = new SqlDataAdapter($"SELECT {AllFields} FROM tblCustomer WHERE TelHome LIKE '%{SearchVal}%'  OR TelWork LIKE '%{SearchVal}%' OR TelOther LIKE '%{SearchVal}%'", con);
 				}
+				if (Field == "Name")
+				{
+                      adapter = new SqlDataAdapter($"SELECT {AllFields} FROM tblCustomer WHERE Name LIKE '%{SearchVal}%'  OR Surname LIKE '%{SearchVal}%'", con);                 
+
+                }
 				else
 				{
-                     adapter = new SqlDataAdapter($"SELECT * FROM tblCustomer WHERE [{Field}] LIKE '%{SearchVal}%'", con);
+                     adapter = new SqlDataAdapter($"SELECT {AllFields} FROM tblCustomer WHERE [{Field}] LIKE '%{SearchVal}%'", con);
                 }
                 DataSet ds = new DataSet();
 				try
