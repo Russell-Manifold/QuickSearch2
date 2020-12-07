@@ -37,7 +37,7 @@
                     <asp:Button ID="btnClear" runat="server" Text="Clear" OnClick="btnClear_Click" Height="2em"  />
                 </div>
                 
-                <div style="margin:auto" >
+                <div style="width:98%; margin:auto " >
                     <asp:GridView ID="GridViewCustomer" runat="server" BackColor="White" BorderColor="#999999" BorderStyle="Solid" BorderWidth="1px" CellPadding="3" ForeColor="Black" GridLines="Vertical" Width="100%" >
 						<AlternatingRowStyle BackColor="#CCCCCC" />
 						<FooterStyle BackColor="#CCCCCC" />
@@ -48,6 +48,35 @@
 						<SortedAscendingHeaderStyle BackColor="#808080" />
 						<SortedDescendingCellStyle BackColor="#CAC9C9" />
 						<SortedDescendingHeaderStyle BackColor="#383838" />
+                        <Columns>
+                            <asp:TemplateField HeaderText="SOS" ItemStyle-Width="3em">
+                                                   <ItemTemplate>
+                                                       <asp:CheckBox ID="CheckBox1" runat="server" Enabled="false" Checked='<%# Eval("HomeAssistPanicSOS") %>'/>
+                                                   </ItemTemplate>
+                                                </asp:TemplateField>
+                            <asp:BoundField DataField="MemberStatus" HeaderText="Status" />
+                            <asp:BoundField DataField="PolicyType"  HeaderText="Policy Type"/>
+                            <asp:BoundField DataField="MemberNo" HeaderText="Member No" />
+                            <asp:BoundField DataField="Policy_Inception_date" HeaderText="Policy Inception_date" HeaderStyle-Width="100" DataFormatString="{0:dd-MM-yyyy}" />
+                            <%--<asp:BoundField DataField="CancellationDate" HeaderText="Cancellation Date" DataFormatString="{0:dd MM yyyy}"/>--%>
+                            <asp:BoundField DataField="Title" HeaderText="Title" />
+                            <asp:BoundField DataField="Name" HeaderText="Name" />                           
+                            <asp:BoundField DataField="Surname" HeaderText="Surname" />                           
+                            <asp:BoundField DataField="IDNumber" HeaderText="ID Number" />                           
+                            <%--<asp:BoundField DataField="PassportNumber" HeaderText="Passport Number" />--%>                           
+                            <asp:BoundField DataField="TelHome" HeaderText="TelHome" />                           
+                            <asp:BoundField DataField="TelWork" HeaderText="TelWork" />                           
+                            <asp:BoundField DataField="TelOther" HeaderText="TelOther" />                           
+                            <asp:BoundField DataField="MainEmailAddress" HeaderText="Main Email Address" />                           
+                            <asp:BoundField DataField="AltEmailAddress" HeaderText="Alt Email Address" />                           
+                            <asp:BoundField DataField="ResidentialAddressComplexNo" HeaderText="Residential Address Complex No" />                           
+                            <asp:BoundField DataField="ResidentialAddressComplexName" HeaderText="Address Complex Name" />                           
+                            <asp:BoundField DataField="ResidentialAddressStreetNo" HeaderText="Address Street No" />                           
+                            <asp:BoundField DataField="ResidentialAddressStreetName" ItemStyle-Width="100%" HeaderText="Address Street Name" />                           
+                            <asp:BoundField DataField="ResidentialAddressSuburb" HeaderText="Suburb" />                           
+                            <%--<asp:BoundField DataField="ResidentialAddressPOcode" HeaderText="Code" />--%>                           
+                            <asp:BoundField DataField="ResidentialAddressProvince" HeaderText="Province" />                                                    
+                        </Columns>
 					</asp:GridView>
                     </div>
                     </div>

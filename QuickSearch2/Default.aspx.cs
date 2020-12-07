@@ -102,29 +102,30 @@ namespace QuickSearch2
                 var output = database.FetchQuery(adp);
                 try
                 {                    
-                    GridViewCustomer.AutoGenerateColumns = true;
+                    GridViewCustomer.AutoGenerateColumns = false;
                     GridViewCustomer.DataSource = output;
+                    //DataTable tbl = new DataTable();
                     GridViewCustomer.DataBind();
-                    foreach (GridViewRow dr in GridViewCustomer.Rows)
-                    {
-                        try
-                        {
-                            DateTime dts1 = Convert.ToDateTime(dr.Cells[4].Text);
-                            dr.Cells[4].Text = dts1.ToString("dd MMM yyyy");
+                    //foreach (GridViewRow dr in GridViewCustomer.Rows)
+                    //{
+                    //    try
+                    //    {
+                    //        DateTime dts1 = Convert.ToDateTime(dr.Cells[4].Text);
+                    //        dr.Cells[4].Text = dts1.ToString("dd MMM yyyy");
 
-                        }
-                        catch (Exception)
-                        {
-                        }
-                        try
-                        {
-                            DateTime dts2 = Convert.ToDateTime(dr.Cells[5].Text);
-                            dr.Cells[5].Text = dts2.ToString("dd MMM yyyy");
-                        }
-                        catch (Exception)
-                        {
-                        }
-                    }    
+                    //    }
+                    //    catch (Exception)
+                    //    {
+                    //    }
+                    //    try
+                    //    {
+                    //        DateTime dts2 = Convert.ToDateTime(dr.Cells[5].Text);
+                    //        dr.Cells[5].Text = dts2.ToString("dd MMM yyyy");
+                    //    }
+                    //    catch (Exception)
+                    //    {
+                    //    }
+                    //}    
 					if (output.Count > 0)
 					{
 						SendLogData(output.Count + "", Field, SearchVal, DateTime.Now.ToString("dd MMM yyyy hh:mm:ss"));
