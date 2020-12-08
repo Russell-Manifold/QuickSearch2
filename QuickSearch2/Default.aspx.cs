@@ -13,16 +13,18 @@ using Newtonsoft.Json;
 using Google.Apis.Auth.OAuth2.Responses;
 using QuickSearch2.Models;
 using System.Data;
+using Google.Apis.Drive.v3;
+using Google.Apis.Drive.v3.Data;
 
 namespace QuickSearch2
 {
     public partial class Default : System.Web.UI.Page
     {
-        static string[] Scopes = { SheetsService.Scope.SpreadsheetsReadonly };
-        static string[] ReadWriteScope = { SheetsService.Scope.Spreadsheets };
+        static string[] Scopes = { SheetsService.Scope.Spreadsheets, DriveService.Scope.Drive};
         static string ApplicationName = "QuickSearchProject";
         static AccessLayer database=null;
         SettingsInfo mainSettings=null;
+        string permissionId = "";
         //protected string googleplus_redirect_url = "https://localhost:44322/Default.aspx";
         //protected string googleplus_redirect_url = "http://localhost/QuickSearch";
         private string fileId = "";
@@ -30,7 +32,7 @@ namespace QuickSearch2
 		{
 			if (mainSettings==null)
 			{
-                var s = File.ReadAllText(HttpContext.Current.Server.MapPath("credentials.json"));
+                var s = System.IO.File.ReadAllText(HttpContext.Current.Server.MapPath("credentials.json"));
                 mainSettings = JsonConvert.DeserializeObject<WebInfo>(s).web;
             }          
 		}
@@ -41,6 +43,45 @@ namespace QuickSearch2
                 database = new AccessLayer(HttpContext.Current.Server.MapPath("App_Data\\Sqlite.db3"));
 			}
 		}
+        private void AllowPermission(string fieldID)
+		{
+            GoogleCredential credential = GoogleCredential.FromAccessToken(GetCurrentAccessToken());
+            var service = new DriveService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = ApplicationName,
+            });
+            Permission perm = new Permission();
+            perm.Type = "anyone";
+            perm.Role = "writer";
+            permissionId= perm.Id;
+			try
+			{
+                var permss = service.Permissions.Create(perm, fileId).Execute();
+                permissionId = permss.Id;
+			}
+			catch
+			{
+
+			}                                
+        }
+        private void DisablePermission(string fieldID)
+        {
+            GoogleCredential credential = GoogleCredential.FromAccessToken(GetCurrentAccessToken());
+            var service = new DriveService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = ApplicationName,
+            });
+            try
+            {
+                service.Permissions.Delete(fileId,permissionId).Execute();
+            }
+            catch
+            {
+
+            }
+        }
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
@@ -58,11 +99,21 @@ namespace QuickSearch2
                         {
                             try
                             {
+                                AllowPermission(fileId);
+
                                 client.DownloadFile("https://drive.google.com/uc?export=download&id=" + fileId, HttpContext.Current.Server.MapPath(fileId + ".csv"));
+                                DisablePermission(fileId);
                                 LoadNewID(fileId);
                                 LoadCSVToDb(HttpContext.Current.Server.MapPath(fileId + ".csv"));
+								try
+								{
+									System.IO.File.Delete(HttpContext.Current.Server.MapPath(fileId + ".csv"));
+                                }
+								catch{ }                                
                             }
-                            catch { }
+                            catch(Exception ex) {
+                                ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "Error", "alert('Could not download file " + ex + "')", true);
+                            }
                         }
                     }
                 }
@@ -128,7 +179,7 @@ namespace QuickSearch2
         }
         private void LoadCSVToDb(string path)
         {
-			string csvData = File.ReadAllText(path);
+			string csvData = System.IO.File.ReadAllText(path);
 			csvData = csvData.Substring(csvData.IndexOf(Environment.NewLine) + 1);
             List<Client> AllClients = new List<Client>();
             string[] ros = new string[24];
@@ -136,226 +187,79 @@ namespace QuickSearch2
 			{            
 				if (!string.IsNullOrEmpty(row))
 				{
-                    ros = row.Split('|');
-                    Client cl = new Client
-                    {
-                        MemberStatus=ros[0],
-                        PolicyType = ros[1],
-                        MemberNo = ros[2],
-                        Policy_Inception_date = Convert.ToDateTime(ros[3]),
-                        CancellationDate = Convert.ToDateTime(ros[4]),
-                        Title = ros[5],
-                        Name = ros[6],
-                        Surname = ros[7],
-                        IDNumber = ros[8],
-                        PassportNumber = ros[9],
-                        TelHome = ros[10],
-                        TelWork = ros[11],
-                        TelOther = ros[12],
-                        MainEmailAddress = ros[13],
-                        AltEmailAddress = ros[14],
-                        ResidentialAddressComplexNo = ros[15],
-                        ResidentialAddressComplexName = ros[16],
-                        ResidentialAddressStreetNo = ros[17],
-                        ResidentialAddressStreetName = ros[18],
-                        ResidentialAddressSuburb = ros[19],
-                        ResidentialAddressPOcode = ros[20],
-                        ResidentialAddressProvince = ros[21]
-                    };
-                    if (ros[22] == "Y")
-                    {
-                        cl.HomeAssistPanicSOS = true;
+					try
+					{
+                        ros = row.Split('|');
+                        Client cl = new Client
+                        {
+                            MemberStatus = ros[0],
+                            PolicyType = ros[1],
+                            MemberNo = ros[2],
+                            Policy_Inception_date = Convert.ToDateTime(ros[3]),
+                            CancellationDate = Convert.ToDateTime(ros[4]),
+                            Title = ros[5],
+                            Name = ros[6],
+                            Surname = ros[7],
+                            IDNumber = ros[8],
+                            PassportNumber = ros[9],
+                            TelHome = ros[10],
+                            TelWork = ros[11],
+                            TelOther = ros[12],
+                            MainEmailAddress = ros[13],
+                            AltEmailAddress = ros[14],
+                            ResidentialAddressComplexNo = ros[15],
+                            ResidentialAddressComplexName = ros[16],
+                            ResidentialAddressStreetNo = ros[17],
+                            ResidentialAddressStreetName = ros[18],
+                            ResidentialAddressSuburb = ros[19],
+                            ResidentialAddressPOcode = ros[20],
+                            ResidentialAddressProvince = ros[21]
+                        };
+                        if (ros[22] == "Y")
+                        {
+                            cl.HomeAssistPanicSOS = true;
+                        }
+                        else
+                        {
+                            cl.HomeAssistPanicSOS = false;
+                        }
+                        AllClients.Add(cl);
                     }
-                    else
-                    {
-                        cl.HomeAssistPanicSOS = false;
-                    }
-                    AllClients.Add(cl);																										
+					catch
+					{
+
+					}
+                   																								
 				}
 			}
-            database.BulkInsert(AllClients);
-
-
-			//string csvData = File.ReadAllText(path);
-			//csvData = csvData.Substring(csvData.IndexOf(Environment.NewLine) + 1);
-			//DataTable dt = new DataTable();
-			//dt.Columns.AddRange(new DataColumn[24] {
-			//    new DataColumn("IDVal",typeof(int)),
-			//    new DataColumn("MemberStatus",typeof(string)),
-			//    new DataColumn("PolicyType",typeof(string)),
-			//    new DataColumn("MemberNo",typeof(string)),
-			//    new DataColumn("Policy_Inception_date",typeof(DateTime)),
-			//    new DataColumn("CancellationDate",typeof(DateTime)),
-			//    new DataColumn("Title",typeof(string)),
-			//    new DataColumn("Name",typeof(string)),
-			//    new DataColumn("Surname",typeof(string)),
-			//    new DataColumn("IDNumber",typeof(string)),
-			//    new DataColumn("PassportNumber",typeof(string)),
-			//    new DataColumn("TelHome",typeof(string)),
-			//    new DataColumn("TelWork",typeof(string)),
-			//    new DataColumn("TelOther",typeof(string)),
-			//    new DataColumn("MainEmailAddress",typeof(string)),
-			//    new DataColumn("AltEmailAddress",typeof(string)),
-			//    new DataColumn("ResidentialAddressComplexNo",typeof(string)),
-			//    new DataColumn("ResidentialAddressComplexName",typeof(string)),
-			//    new DataColumn("ResidentialAddressStreetNo",typeof(string)),
-			//    new DataColumn("ResidentialAddressStreetName",typeof(string)),
-			//    new DataColumn("ResidentialAddressSuburb",typeof(string)),
-			//    new DataColumn("ResidentialAddressPOcode", typeof(string)),
-			//    new DataColumn("ResidentialAddressProvince",typeof(string)),
-			//    new DataColumn("HomeAssistPanicSOS",typeof(bool))});
-			//foreach (string row in csvData.Split(Environment.NewLine.ToCharArray()))
-			//{
-			//    if (!string.IsNullOrEmpty(row))
-			//    {
-			//        dt.Rows.Add();
-			//        int i = 1;
-			//        foreach (string cell in row.Split('|'))
-			//        {
-			//            try
-			//            {
-			//                dt.Rows[dt.Rows.Count - 1][i] = cell;
-			//                i++;
-			//            }
-			//            catch (Exception ex)
-			//            {
-			//                if (ex.Message.Contains("Expected type is Boolean"))
-			//                {
-			//                    if (cell == "Y")
-			//                    {
-			//                        dt.Rows[dt.Rows.Count - 1][i] = true;
-			//                        i++;
-			//                    }
-			//                    else
-			//                    {
-			//                        dt.Rows[dt.Rows.Count - 1][i] = false;
-			//                        i++;
-			//                    }
-			//                }
-			//            }
-			//        }
-			//    }
-			//}
-			//if (dt.Rows.Count > 0)
-			//{
-			//    RemoveTableData();
-			//}
-
-			//using (SqlConnection con = new SqlConnection(SQLConnectionParm))
-			//{
-			//    con.Open();
-			//    SqlBulkCopy bulk = new SqlBulkCopy(con);
-			//    bulk.DestinationTableName = "dbo.tblCustomer";
-			//    bulk.WriteToServer(dt);
-			//    con.Close();
-			//}           
+            database.DeleteTableData();
+            database.BulkInsert(AllClients);			           
 		}
 		private void RemoveTableData()
         {
-            database.DeleteTableData();
-			//try
-			//{
-   //             using (SqlConnection con = new SqlConnection(SQLConnectionParm))
-   //             {
-   //                 con.Open();
-   //                 cmd.Connection = con;
-   //                 cmd.CommandText = "DELETE FROM tblCustomer";
-   //                 cmd.ExecuteNonQuery();
-   //                 con.Close();
-   //             }
-                
-   //         }
-			//catch
-			//{
-			//}
-          
+            database.DeleteTableData();          
         }
         private void LoadNewID(string NewId)
         {
             database.LoadNewID(NewId);
-			//try
-			//{
-   //             using (SqlConnection con = new SqlConnection(SQLConnectionParm))
-   //             {
-   //                 con.Open();
-   //                 cmd.Connection = con;
-   //                 cmd.CommandText = "DELETE FROM tblID";
-   //                 cmd.ExecuteNonQuery();
-   //                 cmd.CommandText = "INSERT INTO tblID(FirstID) VALUES ('" + NewId + "')";
-   //                 cmd.ExecuteNonQuery();
-   //                 con.Close();
-   //             }
-               
-   //         }
-			//catch (Exception)
-			//{
-			//}
+			
             
         }
         private void LoadNewAccessToken(string Token)
         {
             database.LoadNewAccessToken(Token);
-			//try
-			//{
-   //             using (SqlConnection con = new SqlConnection(SQLConnectionParm))
-   //             {
-   //                 con.Open();
-   //                 cmd.Connection = con;
-   //                 cmd.CommandText = "DELETE FROM AccessTokens";
-   //                 cmd.ExecuteNonQuery();
-   //                 cmd.CommandText = "INSERT INTO AccessTokens(AccessToken) VALUES ('" + Token + "')";
-   //                 cmd.ExecuteNonQuery();
-   //                 con.Close();
-   //             }
-               
-   //         }
-			//catch (Exception)
-			//{
-
-			//}
-            
+			
         }
         private string GetCurrentLoadedID()
         {
             return  database.GetCurrentID();
-			//try
-			//{
-   //             using (SqlConnection con = new SqlConnection(SQLConnectionParm))
-   //             {
-   //                 con.Open();
-   //                 cmd.Connection = con;
-   //                 cmd.CommandText = "Select FirstID FROM tblID";
-   //                 string currentID = cmd.ExecuteScalar().ToString();
-   //                 con.Close();
-   //                 return currentID;
-   //             }                
-   //         }
-			//catch (Exception)
-			//{
-   //             return "";
-			//}
+			
            
         }
         private string GetCurrentAccessToken()
         {
             return  database.GetCurrentAccessToken();
-			//try
-			//{
-   //             using (SqlConnection con = new SqlConnection(SQLConnectionParm))
-   //             {
-   //                 con.Open();
-   //                 cmd.Connection = con;
-   //                 cmd.CommandText = "Select AccessToken FROM AccessTokens";
-   //                 string currentID = cmd.ExecuteScalar().ToString();
-   //                 con.Close();
-   //                 return currentID;
-   //             }               
-   //         }
-			//catch (Exception)
-			//{
-   //             return null;
-			//}
-          
+			
         }
         private void SendLogData(string Rows, string fieldName, string searchVal, string DateTime)
         {
@@ -384,7 +288,7 @@ namespace QuickSearch2
             var codeSt = Request.Url.Query;
             if (codeSt.ToString() == "")
             {
-                var codeItem = mainSettings.auth_uri + "" + "?client_id=" + mainSettings.client_id + "&scope=" + SheetsService.Scope.Spreadsheets + "&access_type=offline" + "&redirect_uri=" + mainSettings.redirect_uris[0] + "&response_type=code";
+                var codeItem = mainSettings.auth_uri + "" + "?client_id=" + mainSettings.client_id + "&scope=" + "https://www.googleapis.com/auth/spreadsheets  https://www.googleapis.com/auth/drive" + "&access_type=offline" + "&redirect_uri=" + mainSettings.redirect_uris[0] + "&response_type=code";
                 Response.Redirect(codeItem);
             }
             string queryString = codeSt.ToString();
