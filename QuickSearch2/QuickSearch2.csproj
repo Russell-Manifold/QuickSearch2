@@ -108,6 +108,7 @@
     <Content Include="Global.asax" />
     <Content Include="search--v2.png" />
     <Content Include="style.css" />
+    <Content Include="tenorwait.gif" />
     <Content Include="trackboxmain.PNG" />
     <Content Include="Web.config" />
   </ItemGroup>

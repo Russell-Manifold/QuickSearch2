@@ -2,25 +2,17 @@
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
-using Google.Apis.Util.Store;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using Google.Apis.Auth.OAuth2;
 using Newtonsoft.Json;
-using System.Text;
-using Newtonsoft.Json.Linq;
 using Google.Apis.Auth.OAuth2.Responses;
 using QuickSearch2.Models;
+using System.Data;
 
 namespace QuickSearch2
 {
@@ -70,7 +62,7 @@ namespace QuickSearch2
                                 LoadNewID(fileId);
                                 LoadCSVToDb(HttpContext.Current.Server.MapPath(fileId + ".csv"));
                             }
-                            catch(Exception ex) { }
+                            catch { }
                         }
                     }
                 }
@@ -80,7 +72,7 @@ namespace QuickSearch2
         {
             if (DropDownList1.SelectedIndex == 0)
             {
-                Response.Write("<script>alert('Please select a field')</script>");
+                ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "Error", "alert('Please select a field')", true);
             }
             else
             {
@@ -102,38 +94,35 @@ namespace QuickSearch2
                 var output = database.FetchQuery(adp);
                 try
                 {                    
-                    GridViewCustomer.AutoGenerateColumns = false;
                     GridViewCustomer.DataSource = output;
-                    //DataTable tbl = new DataTable();
                     GridViewCustomer.DataBind();
-                    //foreach (GridViewRow dr in GridViewCustomer.Rows)
-                    //{
-                    //    try
-                    //    {
-                    //        DateTime dts1 = Convert.ToDateTime(dr.Cells[4].Text);
-                    //        dr.Cells[4].Text = dts1.ToString("dd MMM yyyy");
+                    foreach (GridViewRow dr in GridViewCustomer.Rows)
+                    {
+                        try
+                        {
+                            DateTime dts1 = Convert.ToDateTime(dr.Cells[4].Text);
+                            dr.Cells[4].Text = dts1.ToString("dd MMM yyyy");
 
-                    //    }
-                    //    catch (Exception)
-                    //    {
-                    //    }
-                    //    try
-                    //    {
-                    //        DateTime dts2 = Convert.ToDateTime(dr.Cells[5].Text);
-                    //        dr.Cells[5].Text = dts2.ToString("dd MMM yyyy");
-                    //    }
-                    //    catch (Exception)
-                    //    {
-                    //    }
-                    //}    
-					if (output.Count > 0)
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+                    if (output.Count > 0)
 					{
-						SendLogData(output.Count + "", Field, SearchVal, DateTime.Now.ToString("dd MMM yyyy hh:mm:ss"));
-					}
+                        try
+                        {
+                            SendLogData(output.Count + "", Field, SearchVal, DateTime.Now.ToString("dd MMM yyyy hh:mm:ss"));
+                        }
+                        catch (Exception ex)
+                        {
+                           ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "Error", "alert('Unable To send Data " + ex + "')", true);
+                        }
+                     }
 				}
                 catch (Exception ex)
                 {
-                    Response.Write("<script>alert('Could not load due to " + ex + "')</script>");
+                   ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "Error", "alert('Could not load due to " + ex + "')", true);
                 }
             }
         }
@@ -376,8 +365,7 @@ namespace QuickSearch2
                 HttpClientInitializer = credential,
                 ApplicationName = ApplicationName,
             });
-            try
-            {
+          
                 String spreadsheetId = QuickSearch2.Properties.Settings.Default.LogDataSpreadsheet;
                 String range = "Sheet1!A1:E1";
                 ValueRange body = new ValueRange();
@@ -388,10 +376,8 @@ namespace QuickSearch2
                 var result = service.Spreadsheets.Values.Append(body, spreadsheetId, range);
                 result.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
                 result.Execute();
-            }
-            catch(Exception ex) {
-                Response.Write("<script>alert('Unable To send Data " + ex + "')</script>");
-            }
+          
+            
         }
         private void GetAccessToken()
 		{
@@ -410,20 +396,22 @@ namespace QuickSearch2
 
             var exchangeWC = new WebClient();
             exchangeWC.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
-            var results = exchangeWC.UploadString(new Uri(mainSettings.token_uri), formData);
-
-            var tokenData = JsonConvert.DeserializeObject<QuickSearch2.AccessToken>(results);
-            var token = new TokenResponse
+            try
             {
-                AccessToken = tokenData.access_token
-            };
-            LoadNewAccessToken(tokenData.access_token);
+                var results = exchangeWC.UploadString(new Uri(mainSettings.token_uri), formData);
+                var tokenData = JsonConvert.DeserializeObject<QuickSearch2.AccessToken>(results);
+                var token = new TokenResponse
+                {
+                    AccessToken = tokenData.access_token
+                };
+                LoadNewAccessToken(tokenData.access_token);
+            }          
+            catch { 
+            }                        
         }
         private void GetFileId()
-        {
-            
+        {           
             GoogleCredential credential =GoogleCredential.FromAccessToken( GetCurrentAccessToken());
-
             var service = new SheetsService(new BaseClientService.Initializer()
             {             
                 HttpClientInitializer = credential,
@@ -445,12 +433,12 @@ namespace QuickSearch2
                 }
                 else
                 {
-                    Response.Write("<script>alert('Could not find ID')</script>");
+                    ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "Error", "alert('Could not find ID')", true);
                 }
             }
             catch(Exception ex)
             {
-                Response.Write("<script>alert('Unable to connect to specified Google Sheet due to "+ex+"')</script>");
+                ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "Error", "alert('Unable to connect to specified Google Sheet due to " + ex + "')", true);
             }
         }
         protected void btnClear_Click(object sender, EventArgs e)

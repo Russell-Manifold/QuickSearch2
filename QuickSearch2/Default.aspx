@@ -10,13 +10,33 @@
 		<meta name="keywords" content="" />
      <link id="Link3" runat="server" rel="shortcut icon" href="~/search--v2.png" type="image/x-icon"/>
         <link id="Link4" runat="server" rel="icon" href="~/search--v2.png" type="image/ico" />		
-    <noscript>
-			<link rel="stylesheet" href="~/style.css" type="text/css" />
-        </noscript>
+     
+                <style type="text/css">
+                        body
+                        {
+                            font-family: Arial;
+                            font-size: 10pt;
+                        }
+                        td
+                        {
+                            cursor: pointer;
+                        }
+                        .hover_row
+                        {
+                            background-color: #ffd800;
+                        }
+            </style>
 </head>
 <body>
     <form id="form1" runat="server">
         <asp:ScriptManager ID="ScriptManager1" runat="server"/>
+        <asp:UpdateProgress ID="UpdateProgress1" runat="server" AssociatedUpdatePanelID="UpdatePanel1">
+            <ProgressTemplate>
+                    <div style="position: fixed; text-align: center; height: 100%; width: 100%; top: 0; right: 0; left: 0; z-index: 9999999; background-color: #000000; opacity: 0.5;">
+                         <asp:Image ID="imgUpdateProgress" runat="server" ImageUrl="~/tenorwait.gif" AlternateText="Loading ..." ToolTip="Loading ..." style="padding: 10px;position:fixed;top:30%;left:40%; border-radius:1.5em" />
+                   </div>
+            </ProgressTemplate>
+        </asp:UpdateProgress>
         <asp:UpdatePanel ID="UpdatePanel1" runat="server">
             <ContentTemplate>
                <div style="width:80%">
@@ -34,54 +54,54 @@
                     Search for 
                     <asp:TextBox ID="txfSearch" runat="server" Width="100"></asp:TextBox>
                     <asp:Button ID="btnSearch" runat="server" Text="Search" OnClick="btnSearch_Click" Height="2em" />
-                    <asp:Button ID="btnClear" runat="server" Text="Clear" OnClick="btnClear_Click" Height="2em"  />
+                    <asp:Button ID="btnClear" runat="server" Text="Clear" OnClick="btnClear_Click" Height="2em"  /><br /><br />
                 </div>
-                
-                <div style="width:98%; margin:auto " >
-                    <asp:GridView ID="GridViewCustomer" runat="server" BackColor="White" BorderColor="#999999" BorderStyle="Solid" BorderWidth="1px" CellPadding="3" ForeColor="Black" GridLines="Vertical" Width="100%" >
-						<AlternatingRowStyle BackColor="#CCCCCC" />
+                </div>
+                <div style="overflow:auto " >
+                    <asp:GridView ID="GridViewCustomer" runat="server" CellPadding="3" ForeColor="Black" GridLines="Vertical"  AutoGenerateColumns="false" >
+						<RowStyle />
+                        <AlternatingRowStyle BackColor="WhiteSmoke" />
 						<FooterStyle BackColor="#CCCCCC" />
 						<HeaderStyle BackColor="Black" Font-Bold="True" ForeColor="White" />
-						<PagerStyle BackColor="#999999" ForeColor="Black" HorizontalAlign="Center" />
-						<SelectedRowStyle BackColor="#000099" Font-Bold="True" ForeColor="White" />
-						<SortedAscendingCellStyle BackColor="#F1F1F1" />
-						<SortedAscendingHeaderStyle BackColor="#808080" />
-						<SortedDescendingCellStyle BackColor="#CAC9C9" />
-						<SortedDescendingHeaderStyle BackColor="#383838" />
                         <Columns>
-                            <asp:TemplateField HeaderText="SOS" ItemStyle-Width="3em">
-                                                   <ItemTemplate>
-                                                       <asp:CheckBox ID="CheckBox1" runat="server" Enabled="false" Checked='<%# Eval("HomeAssistPanicSOS") %>'/>
-                                                   </ItemTemplate>
-                                                </asp:TemplateField>
+                            <asp:TemplateField HeaderText="SOS" ItemStyle-Width="2em">
+                                    <ItemTemplate>
+                                        <asp:CheckBox ID="CheckBox1" runat="server" Enabled="false" Checked='<%# Eval("HomeAssistPanicSOS") %>'/>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
                             <asp:BoundField DataField="MemberStatus" HeaderText="Status" />
                             <asp:BoundField DataField="PolicyType"  HeaderText="Policy Type"/>
                             <asp:BoundField DataField="MemberNo" HeaderText="Member No" />
-                            <asp:BoundField DataField="Policy_Inception_date" HeaderText="Policy Inception_date" HeaderStyle-Width="100" DataFormatString="{0:dd-MM-yyyy}" />
-                            <%--<asp:BoundField DataField="CancellationDate" HeaderText="Cancellation Date" DataFormatString="{0:dd MM yyyy}"/>--%>
+                            <asp:BoundField DataField="Policy_Inception_date" HeaderText="Inception_Date"  ItemStyle-Width="7em"  ItemStyle-HorizontalAlign="Center" />
                             <asp:BoundField DataField="Title" HeaderText="Title" />
-                            <asp:BoundField DataField="Name" HeaderText="Name" />                           
-                            <asp:BoundField DataField="Surname" HeaderText="Surname" />                           
+                            <asp:BoundField DataField="Name" HeaderText="Name" ItemStyle-Width="150px" />                           
+                            <asp:BoundField DataField="Surname" HeaderText="Surname" ItemStyle-Width="150px" />                           
                             <asp:BoundField DataField="IDNumber" HeaderText="ID Number" />                           
-                            <%--<asp:BoundField DataField="PassportNumber" HeaderText="Passport Number" />--%>                           
-                            <asp:BoundField DataField="TelHome" HeaderText="TelHome" />                           
-                            <asp:BoundField DataField="TelWork" HeaderText="TelWork" />                           
-                            <asp:BoundField DataField="TelOther" HeaderText="TelOther" />                           
-                            <asp:BoundField DataField="MainEmailAddress" HeaderText="Main Email Address" />                           
+                            <asp:BoundField DataField="TelHome" HeaderText="Tel Home" />                           
+                            <asp:BoundField DataField="TelWork" HeaderText="Tel Work" />                           
+                            <asp:BoundField DataField="TelOther" HeaderText="Tel Other" />                           
+                            <asp:BoundField DataField="MainEmailAddress" HeaderText="Email Address" />                           
                             <asp:BoundField DataField="AltEmailAddress" HeaderText="Alt Email Address" />                           
-                            <asp:BoundField DataField="ResidentialAddressComplexNo" HeaderText="Residential Address Complex No" />                           
-                            <asp:BoundField DataField="ResidentialAddressComplexName" HeaderText="Address Complex Name" />                           
-                            <asp:BoundField DataField="ResidentialAddressStreetNo" HeaderText="Address Street No" />                           
-                            <asp:BoundField DataField="ResidentialAddressStreetName" ItemStyle-Width="100%" HeaderText="Address Street Name" />                           
+                            <asp:BoundField DataField="ResidentialAddressComplexNo" HeaderText="Complex No" />                           
+                            <asp:BoundField DataField="ResidentialAddressComplexName" HeaderText="Complex Name" ItemStyle-Width="150px" />                           
+                            <asp:BoundField DataField="ResidentialAddressStreetNo" HeaderText="Street No" ItemStyle-HorizontalAlign="Center" />                           
+                            <asp:BoundField DataField="ResidentialAddressStreetName" HeaderText="Street Name" ItemStyle-Width="150px" />                           
                             <asp:BoundField DataField="ResidentialAddressSuburb" HeaderText="Suburb" />                           
-                            <%--<asp:BoundField DataField="ResidentialAddressPOcode" HeaderText="Code" />--%>                           
-                            <asp:BoundField DataField="ResidentialAddressProvince" HeaderText="Province" />                                                    
+                            <asp:BoundField DataField="ResidentialAddressProvince" HeaderText="Code" />                                                    
                         </Columns>
 					</asp:GridView>
                     </div>
-                    </div>
-           </ContentTemplate>
-        </asp:UpdatePanel>
+                 <script type="text/javascript">
+                     $(function () {
+                         $("[id*=GridViewCustomer] td").hover(function () {
+                             $("td", $(this).closest("tr")).addClass("hover_row");
+                         }, function () {
+                             $("td", $(this).closest("tr")).removeClass("hover_row");
+                         });
+                     });
+        </script>
+         </ContentTemplate>
+        </asp:UpdatePanel>      
     </form>
 </body>
 </html>
